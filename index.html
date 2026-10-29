@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<!-- Wald & Holz – Startseite für das Auftragsbuch im Vollbild (W8.78, Arne 29.10.2026: „Vorschlag eins“).
+     Zeigt die Auftragsbuch-Web-App (Google Apps Script) in einem Rahmen über die ganze Fläche. Enthält keine Daten: die Adresse der
+     Web-App wird beim ersten Öffnen eingegeben und nur auf diesem Gerät gespeichert; Anmeldung und Daten bleiben bei Google.
+     Ändern der Adresse: Seite mit „?neu“ am Ende öffnen. Einmal einrichten geht auch mit „?app=<Adresse der Web-App>“. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#06402B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wald & Holz">
+<title>Wald &amp; Holz</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="symbol-192.png">
+<link rel="apple-touch-icon" href="symbol-192.png">
+<style>
+  html, body { margin: 0; height: 100%; background: #06402B; color: #fff; font: 16px/1.45 "Source Sans 3", "Segoe UI", system-ui, Roboto, Arial, sans-serif; }
+  #rahmen { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #F2F2EE; display: block; }
+  .einrichten { box-sizing: border-box; max-width: 560px; margin: 0 auto; padding: 48px 20px; }
+  .einrichten img { width: 72px; height: 72px; border-radius: 16px; display: block; margin-bottom: 18px; }
+  .einrichten h1 { font-size: 24px; margin: 0 0 8px; }
+  .einrichten p { margin: 0 0 14px; color: #d8e6dd; }
+  .einrichten input { box-sizing: border-box; width: 100%; font: inherit; padding: 12px 14px; border-radius: 10px; border: 0; margin: 6px 0 12px; }
+  .einrichten button { font: inherit; font-weight: 700; padding: 12px 20px; border-radius: 10px; border: 0; background: #fff; color: #06402B; cursor: pointer; }
+  .einrichten .fehler { color: #ffd2c4; font-weight: 700; min-height: 1.4em; }
+  .einrichten ol { padding-left: 20px; color: #d8e6dd; }
+</style>
+</head>
+<body>
+<script>
+(function () {
+  var SCHLUESSEL = 'wh_app_adresse';
+  function gueltig(u) { return /^https:\/\/script\.google\.com\/(a\/[^\/]+\/)?macros\/s\/[A-Za-z0-9_-]+\/exec(\?.*)?$/.test(String(u || '').trim()); }
+  function lesen() { try { return localStorage.getItem(SCHLUESSEL) || ''; } catch (e) { return ''; } }
+  function merken(u) { try { localStorage.setItem(SCHLUESSEL, u); return true; } catch (e) { return false; } }
+  var q = new URLSearchParams(location.search);
+  if (q.has('app') && gueltig(q.get('app'))) { merken(q.get('app').trim()); history.replaceState(null, '', location.pathname); }
+  var adresse = q.has('neu') ? '' : lesen();
+  if (gueltig(adresse)) {
+    var f = document.createElement('iframe');
+    f.id = 'rahmen'; f.title = 'Wald & Holz – Auftragsbuch';
+    f.setAttribute('allow', 'web-share; clipboard-write; fullscreen');
+    f.src = adresse;
+    document.body.appendChild(f);
+  } else {
+    var d = document.createElement('div'); d.className = 'einrichten';
+    d.innerHTML = '<img src="symbol-192.png" alt=""><h1>Wald &amp; Holz einrichten</h1>'
+      + '<p>Einmal auf diesem Gerät die Adresse der Auftragsbuch-Web-App einfügen. Sie steht in Apps Script unter Bereitstellen → Bereitstellungen verwalten → „Web-App“ (endet auf /exec).</p>'
+      + '<input id="adr" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec" value="' + (lesen() || '').replace(/"/g, '') + '">'
+      + '<div class="fehler" id="fehler"></div><button type="button" id="los">Speichern und öffnen</button>'
+      + '<ol><li>Danach im Chrome-Menü (⋮) „App installieren“ bzw. „Zum Startbildschirm hinzufügen“ wählen.</li>'
+      + '<li>Ab dann über das Symbol „Wald &amp; Holz“ öffnen – im Vollbild.</li>'
+      + '<li>Mit dem Betriebskonto in Chrome angemeldet sein (Google), sonst bleibt die Fläche leer.</li></ol>';
+    document.body.appendChild(d);
+    document.getElementById('los').onclick = function () {
+      var u = document.getElementById('adr').value.trim();
+      if (!gueltig(u)) { document.getElementById('fehler').textContent = 'Das ist keine Adresse einer Google-Web-App (https://script.google.com/…/exec).'; return; }
+      merken(u); location.replace(location.pathname);
+    };
+  }
+  if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) { } }
+})();
+</script>
+</body>
+</html>
